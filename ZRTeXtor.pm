@@ -1,14 +1,19 @@
-
+#
 # ZRTeXtor.pm : library for processing TeX font data
 #
-# Written by ZR <zrbabbler@yahoo.co.jp>
+# Copyright (c) 2017 Takayuki YATO (aka. "ZR")
+#   GitHub:   https://github.com/zr-tex8r
+#   Twitter:  @zr_tex8r
+#
+# This software is distributed under the MIT License.
+#
 
 ######## start package
 package ZRTeXtor;
 use strict qw( refs vars subs );
 require Exporter;
-our $VERSION = 1.003_00;
-our $mod_date = "2010/05/05";
+our $VERSION = 1.004_00;
+our $mod_date = "2017/07/17";
 our @ISA = qw( Exporter );
 our @EXPORT = ();
 our %EXPORT_TAGS = (
@@ -69,8 +74,6 @@ our @EXPORT_OK = map { @{$_} } (values %EXPORT_TAGS);
 $EXPORT_TAGS{all} = [ @EXPORT_OK ];
 use Carp;
 use Encode qw(encode decode);
-use Data::Dump;
-*dumpp = *Data::Dump::dump;
 
 ######## general ########
 
@@ -274,13 +277,12 @@ sub zdquote
 use IPC::Open3; # for open3()
 our %cmd_name = (
   kpsewhich => 'kpsewhich',
-  tftopl => 'tftopl',
-  pltotf => 'pltotf',
+  tftopl => 'ptftopl',
+  pltotf => 'ppltotf',
   uptftopl => 'uptftopl',
   uppltotf => 'uppltotf',
   vftovp => 'vftovp',
   vptovf => 'vptovf',
-  opl2ofm => 'opl2ofm',
   opl2ofm => 'opl2ofm',
 );
 
@@ -620,7 +622,7 @@ sub pl_form_list
 {
   my ($pl, $ind) = @_; my (@cnks, @lins, @toks);
   my ($k, $t, $lsepp, $lsep, $ent, $tok, $txt);
-  if ($ind >= 0) { 
+  if ($ind >= 0) {
     push(@cnks, '('); $ind += 3;
     $lsepp = $lsep = "\n" . ' ' x $ind;
   } else { push(@cnks, '('); $lsepp = $lsep = ' '; }
@@ -774,8 +776,7 @@ sub pl_form_num
   if ($fl eq 'I') { $fl = ($pl_prefer_hex) ? 'H' : 'O'; }
   if (($fl eq 'R' && !(- B31 <= $v && $v <= M31))
       || ($fl ne 'R' && !(0 <= $v && $v <= M32))) {
-    #return error("number is out of range ($v for $tok)");
-    $v = 1234*TU;
+    return error("number is out of range ($v for $tok)");
   }
   if ($fl eq 'C') { $tok = chr($v); }
   elsif ($fl eq 'K') { $tok = jcode_chr($v); }
@@ -897,7 +898,7 @@ sub pl_prop_pos
 # clone share no reference.
 sub pl_clone
 {
-  my ($pl) = @_;;
+  my ($pl) = @_;
   if (ref $pl eq "ARRAY") {
     return [ map { pl_clone($_) } (@$pl) ];
   } else { return $pl; }
@@ -1012,9 +1013,9 @@ sub pl_fontdimen
   my ($in) = @_; my ($q, $t, $pl);
   (defined $in) or $in = { };
   $pl = pl_cook(['FONTDIMEN',
-         ['SLANT', 'R', 0], ['SPACE', 'R', 0], 
-         ['STRETCH', 'R', 0], ['SHRINK', 'R', 0], 
-         ['XHEIGHT', 'R', 0], ['QUAD', 'R', 0], 
+         ['SLANT', 'R', 0], ['SPACE', 'R', 0],
+         ['STRETCH', 'R', 0], ['SHRINK', 'R', 0],
+         ['XHEIGHT', 'R', 0], ['QUAD', 'R', 0],
          ['EXTRASPACE', 'R', 0]]);
   $q = $in->{quad}; (defined $q) or $q = 1;
   pl_set_real($pl->[6], 1, $q);
@@ -1042,10 +1043,10 @@ sub pl_fontdimen_jpl
   my ($in) = @_; my ($q, $t, $pl);
   (defined $in) or $in = { };
   $pl = pl_cook(['FONTDIMEN',
-         ['SLANT', 'R', 0], ['SPACE', 'R', 0], 
-         ['STRETCH', 'R', 0], ['SHRINK', 'R', 0], 
-         ['XHEIGHT', 'R', 0], ['QUAD', 'R', 0], 
-         ['EXTRASPACE', 'R', 0], ['EXTRASTRETCH', 'R', 0], 
+         ['SLANT', 'R', 0], ['SPACE', 'R', 0],
+         ['STRETCH', 'R', 0], ['SHRINK', 'R', 0],
+         ['XHEIGHT', 'R', 0], ['QUAD', 'R', 0],
+         ['EXTRASPACE', 'R', 0], ['EXTRASTRETCH', 'R', 0],
          ['EXTRASHRINK', 'R', 0]]);
   $q = $in->{quad}; (defined $q) or $q = 1;
   pl_set_real($pl->[6], 1, $q);
@@ -1298,7 +1299,7 @@ sub ps_parse0
     $p = pos($txt);
     if (defined $2) { next; } # spaces
     elsif (defined $3) { # '% comment'
-      $txt =~ m/\G.*$/gm; next; 
+      $txt =~ m/\G.*$/gm; next;
     } elsif (defined $4) { # <hexstring>
       ($tok, pos($txt)) = ps_parse0_hexstr($txt, $p);
       (defined $tok) or return ps_parse0_error($txt, $p - 1);
@@ -1388,7 +1389,7 @@ our $enc_form_linwd = 72;    # maximum line length
 
 ##<*> enc_form($key, $enc, $mod)
 # Converts enc array $enc to the text of .enc file. Here $key is
-# the name the encoding vector will be defined with, and $mod 
+# the name the encoding vector will be defined with, and $mod
 # specifies the output form and is OR-value of the following:
 #   ENCF_NORMAL:     normal, one line per name
 #   ENCF_ANNOT:      with comment like "% 0x18" per 8 lines
@@ -1549,7 +1550,7 @@ sub kpse_parse_option
 sub ttf_generate_opl
 {
   my ($ffnt, $id) = @_; my ($t, $rmt, $fd, $pl, $chp);
-  ($t = $ffnt) =~ s|.*/(.*)|$1|; 
+  ($t = $ffnt) =~ s|.*/(.*)|$1|;
   $t = { family => $t, codingscheme => 'UNICODE' };
   (defined($rmt = ttf_get_metric($ffnt, $id)) &&
    defined($fd = pl_fontdimen_opl_rmt($rmt)) &&
@@ -1659,7 +1660,7 @@ sub ttf_parse_out_xetex
   my ($txt) = @_; my ($stg, $lin, @fs, @rmt);
   $stg = 0;
   foreach $lin (split(/\n/, $txt)) {
-    if ($stg == 0) { 
+    if ($stg == 0) {
       if ($lin eq '>>>Start') { $stg = 1; }
     } elsif ($stg == 1) {
       if (@fs = $lin =~
@@ -1928,7 +1929,7 @@ sub vf_parse
   for (;;) {
     $t = ord(substr($dat, $pos, 1));
     if ($stg <= 2 && 0 <= $t && $t <= 241) { # short_charN
-      @fs = unpack("CCa3a$t", substr($dat, $pos)); $pos += $t + 5;
+      @fs = unpack("CCa3a$t", substr($dat, $pos, $t + 5)); $pos += $t + 5;
       ($#fs == 3 && length($fs[3]) == $t)
         or return vf_synerror("premature end");
       $pe = pl_cook(['CHARACTER', 'C', 0,
@@ -1941,10 +1942,13 @@ sub vf_parse
       pl_set_value($pe, 1, $fs[1]);
       $stg = 2; push(@$pl, $pe);
     } elsif ($stg <= 2 && $t == 242) { # long_char
-      @fs = unpack("CNNN", substr($dat, $pos)); $pos += 13;
+      @fs = unpack("CNNN", substr($dat, $pos, 13)); $pos += 13;
       $u = substr($dat, $pos, $fs[1]); $pos += $fs[1];
-      $pe = pl_cook(['CHARACTER', 'C', 0,
-                     ['CHARWD', 'R', 0], undef]);
+      #-- give a cooked list for efficiency
+      #$pe = pl_cook(['CHARACTER', 'C', 0,
+      #               ['CHARWD', 'R', 0], undef]);
+      $pe = (['CHARACTER', [CNUM, 'C', 0], 0,
+              ['CHARWD', [CNUM, 'R', 0], 0], undef]);
       if (defined($t = vf_dvi_parse($u))) { $pe->[4] = $t; }
       elsif (!$swdh) {
         return vf_synerror("illegal dvi code (char $fs[2])");
@@ -1954,7 +1958,7 @@ sub vf_parse
       $stg = 2; push(@$pl, $pe);
     } elsif ($stg <= 1 && 243 <= $t && $t <= 246) { # fnt_defN
       $t -= 242;
-      @fs = unpack("Ca${t}NNNCC", substr($dat, $pos)); $pos += $t + 15;
+      @fs = unpack("Ca${t}NNNCC", substr($dat, $pos, $t + 15)); $pos += $t + 15;
       ($#fs == 6) or return vf_synerror("premature end");;
       $t = $fs[5] + $fs[6]; $u = substr($dat, $pos, $t); $pos += $t;
       (length($u) == $t) or return vf_synerror("premature end");;
@@ -2106,7 +2110,7 @@ sub vf_dvi_special
     $t = "($dat)"; ($t !~ m/[^\x20-\x7e]/) or last;
     (defined($pl = pl_parse_list($t))) or last;
     (vf_issafe_list($pl)) or last;
-    $u = pl_form_list($pl, -1); 
+    $u = pl_form_list($pl, -1);
     return ['SPECIAL', $dat];
   }
   return ['SPEICALHEX', uc(unpack('H*', $dat))];
@@ -2224,7 +2228,6 @@ sub vf_form
   $t = join('', $t, @cfds, @ccps);
   $t .= "\xf8" x (4 - length($t) % 4);
   return $t;
-  
 }
 
 ## vf_dvi_form($pl, $cc)
@@ -2662,7 +2665,7 @@ sub vf_recompile_gluekern
   }
   # create new GLUEKERN list
   foreach $u (@$glkrn) {
-    if (ref $u && 
+    if (ref $u &&
         ($u->[0] eq 'KRN' || $u->[0] eq 'GLUE' || $u->[0] eq 'LABEL')) {
       foreach $ty (@{$tygrp[pl_value($u, 1)]}) {
         $t = pl_sclone($u); pl_set_value($t, 1, $ty);
@@ -2848,7 +2851,7 @@ sub vf_analyze_dimap
     (defined $chdsc->{$cc}) or return error(
       sprintf("charpacket missing in VF: code %04X", $cc));
   }
-  # 
+  #
   @ccs = sort { $a <=> $b } (keys %$chdsc);
   foreach $cc (@ccs) {
     $ty = $typ->{$cc}; $chd = $chdsc->{$cc};
@@ -3097,13 +3100,13 @@ sub jfm_form_preprocess
 sub jfm_form_postprocess
 {
   my ($jfm, $map) = @_; my ($k, $pct, $lct, $ct, @fs);
-  @fs = unpack('nnnn', $jfm); 
-  ($#fs == 3 && $fs[2] * 4 == length($jfm) && 
+  @fs = unpack('nnnn', $jfm);
+  ($#fs == 3 && $fs[2] * 4 == length($jfm) &&
    ($fs[0] == 9 || $fs[0] == 11)) or return;
   $pct = $fs[3] * 4 + 28; $lct = $fs[1] * 4;
   $ct = substr($jfm, $pct, $lct); @fs = unpack('n*', $ct);
   for ($k = 2; $k <= $#fs; $k += 2) { $fs[$k] = $map->{$fs[$k]}; }
-  $ct = pack('n*', @fs); 
+  $ct = pack('n*', @fs);
   return substr($jfm, 0, $pct) . $ct . substr($jfm, $pct + $lct);
 }
 
@@ -3112,16 +3115,16 @@ sub jfm_form_postprocess
 sub jfm_parse_preprocess
 {
   my ($jfm) = @_; my ($k, $pct, $lct, $ct, @fs, $jc, %map);
-  @fs = unpack('nnnn', $jfm); 
-  ($#fs == 3 && $fs[2] * 4 == length($jfm) && 
+  @fs = unpack('nnnn', $jfm);
+  ($#fs == 3 && $fs[2] * 4 == length($jfm) &&
    ($fs[0] == 9 || $fs[0] == 11)) or return;
   $pct = $fs[3] * 4 + 28; $lct = $fs[1] * 4;
   $ct = substr($jfm, $pct, $lct); @fs = unpack('n*', $ct);
-  for ($jc = 0x2121, $k = 2; $k <= $#fs; $k += 2) { 
+  for ($jc = 0x2121, $k = 2; $k <= $#fs; $k += 2) {
     $map{$jc} = $fs[$k]; $fs[$k] = $jc;
     $jc = jfm_nextcode($jc) or return;
   }
-  $ct = pack('n*', @fs); 
+  $ct = pack('n*', @fs);
   $jfm = substr($jfm, 0, $pct) . $ct . substr($jfm, $pct + $lct);
   return ($jfm, \%map);
 }
@@ -3299,7 +3302,7 @@ sub jfm_form_charlist
   (defined $swrng)
     or $swrng = (!defined $jcode_in && !defined $jfm_forced_prefix);
   if ($swrng) { $cl = jfm_rangify_charlist($cl); }
-  foreach $cc (@$cl) { 
+  foreach $cc (@$cl) {
     if (ref $cc) {
       $pe = pl_cook(['CTRANGE', $nf, 0, $nf, 0]);
       pl_set_value($pe, 1, $cc->[0]);
@@ -3344,7 +3347,7 @@ sub jfm_grab_charlist
   return \@cl;
 }
 
-##-------- NOW UNDER CONSIDERATION...
+######## NOW UNDER CONSIDERATION...
 
 ##<*> ttf_generate_jpl($ffnt, $id)
 # Read the metric of a TTF file $ffnt (in case of TTC index is given
@@ -3371,7 +3374,7 @@ sub ttf_generate_jpl
    tfm_reduce_jpl_x($jrmt, $in->{balance});
   (defined $vmt) or return error("failed in length reduction");
   $t = { family => $fam, codingscheme => $in->{codingscheme} };
-  (defined($fd = pl_fontdimen_jpl_rmt($rmt)) && 
+  (defined($fd = pl_fontdimen_jpl_rmt($rmt)) &&
    defined($jpl = pl_header($t, $fd)) &&
    defined($plcp = pl_char_part_jpl($imt, $vmt, 1)))
     or return error("JPL generation failed");
@@ -3425,7 +3428,7 @@ sub ttf_generate_jpl_x
    tfm_reduce_jpl_x($jrmt, $in->{balance});
   (defined $vmt) or return error("failed in length reduction");
   $t = { family => $fam, codingscheme => $in->{codingscheme} };
-  (defined($fd = pl_fontdimen_jpl_rmt($rmt)) && 
+  (defined($fd = pl_fontdimen_jpl_rmt($rmt)) &&
    defined($jpl = pl_header($t, $fd)) &&
    defined($plcp = pl_char_part_jpl($imt, $vmt, 1)))
     or return error("JPL generation failed");
