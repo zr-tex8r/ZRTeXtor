@@ -2743,8 +2743,6 @@ sub vf_assign_type
                  $_, $sty, $stype->{$_}));
         $stype->{$_} = $sty;
       } elsif ($ty != 0) { # set type >0
-        ($_ <= 0xFFFF) or return error(
-         sprintf("code value out of range: char %04X", $_));
         (defined $type->{$_}) or return error(
          sprintf("type assignment (%s) to char out of codespace:" .
                  "char %04X",
@@ -3105,7 +3103,10 @@ sub jfm_form_postprocess
    ($fs[0] == 9 || $fs[0] == 11)) or return;
   $pct = $fs[3] * 4 + 28; $lct = $fs[1] * 4;
   $ct = substr($jfm, $pct, $lct); @fs = unpack('n*', $ct);
-  for ($k = 2; $k <= $#fs; $k += 2) { $fs[$k] = $map->{$fs[$k]}; }
+  for ($k = 2; $k <= $#fs; $k += 2) {
+    my $cc = $map->{$fs[$k]};
+    $fs[$k] = ($cc & 0xFFFF); $fs[$k+1] |= ($cc >> 16 << 8);
+  }
   $ct = pack('n*', @fs);
   return substr($jfm, 0, $pct) . $ct . substr($jfm, $pct + $lct);
 }
@@ -3121,7 +3122,8 @@ sub jfm_parse_preprocess
   $pct = $fs[3] * 4 + 28; $lct = $fs[1] * 4;
   $ct = substr($jfm, $pct, $lct); @fs = unpack('n*', $ct);
   for ($jc = 0x2121, $k = 2; $k <= $#fs; $k += 2) {
-    $map{$jc} = $fs[$k]; $fs[$k] = $jc;
+    $map{$jc} = ($fs[$k] | $fs[$k+1] >> 8 << 16);
+    $fs[$k] = $jc; $fs[$k+1] &= 0xFF;
     $jc = jfm_nextcode($jc) or return;
   }
   $ct = pack('n*', @fs);
