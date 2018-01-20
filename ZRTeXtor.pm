@@ -1,7 +1,7 @@
 #
 # ZRTeXtor.pm : library for processing TeX font data
 #
-# Copyright (c) 2017 Takayuki YATO (aka. "ZR")
+# Copyright (c) 2018 Takayuki YATO (aka. "ZR")
 #   GitHub:   https://github.com/zr-tex8r
 #   Twitter:  @zr_tex8r
 #
@@ -12,8 +12,8 @@
 package ZRTeXtor;
 use strict qw( refs vars subs );
 require Exporter;
-our $VERSION = 1.004_00;
-our $mod_date = "2017/07/17";
+our $VERSION = 1.004_01;
+our $mod_date = "2018/01/20";
 our @ISA = qw( Exporter );
 our @EXPORT = ();
 our %EXPORT_TAGS = (
@@ -1947,8 +1947,8 @@ sub vf_parse
       #-- give a cooked list for efficiency
       #$pe = pl_cook(['CHARACTER', 'C', 0,
       #               ['CHARWD', 'R', 0], undef]);
-      $pe = (['CHARACTER', [CNUM, 'C', 0], 0,
-              ['CHARWD', [CNUM, 'R', 0], 0], undef]);
+      $pe = (['CHARACTER', [CNUM, 0, 'C'], 0,
+              ['CHARWD', [CNUM, 0, 'R'], 0], undef]);
       if (defined($t = vf_dvi_parse($u))) { $pe->[4] = $t; }
       elsif (!$swdh) {
         return vf_synerror("illegal dvi code (char $fs[2])");
