@@ -312,15 +312,17 @@ sub x_captured_exec
 # Wrapper for 'tftopl' command.
 sub x_tftopl
 {
-  my ($tfm, $cmd) = @_; my ($ftmp, $ftfm, $cout, $cerr);
+  my ($tfm, $cmd) = @_; my ($ftmp, $ftfm, $fpl, $cout, $cerr);
   if (!defined $cmd) { $cmd = $cmd_name{tftopl}; }
   if ($tfm =~ m/\.tfm$/i && $tfm !~ /\0/) { $ftfm = $tfm; }
   else {
     $ftfm = $ftmp = get_temp_name() . ".tfm";
     (write_whole_file($ftmp, $tfm, 1)) or return;
   }
-  ($cout, $cerr) = x_captured_exec("$cmd $ftfm");
+  $fpl = get_temp_name() . ".pl";
+  ($cout, $cerr) = x_captured_exec("$cmd $ftfm $fpl");
   if (defined $ftmp) { unlink($ftmp); }
+  $cout = read_whole_file($fpl); unlink($fpl);
   if ($cout eq '' || $cout =~ /CHANGED!\)\s*$/) {
     return error("tftopl failed: $ftfm");
   }
