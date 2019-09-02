@@ -2553,6 +2553,7 @@ sub vf_divide_zvp
   (defined $cspc) or $cspc = jfm_charlist('GL94DB');
   # Next I check consistency about existence of entries
   # (e.g. CIT 4 should exist iff TYPE 4 exists).
+  ($#cist >= 0 && $#cit < 0) and $#cit = 0;
   (defined $tydsc[0])
     or return error("no TYPE for type 0");
   (vf_check_match("TYPE", \@tydsc, "CIT", \@cit, 1, "type"))
