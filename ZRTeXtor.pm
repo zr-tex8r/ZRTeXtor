@@ -539,6 +539,9 @@ sub pl_adjust_lit_paren
       else {
         if ($lin =~ m/\(/) { $lins[$_] =~ s/\(/X0028/g; $repl = 1; }
         if ($lin =~ m/\)/) { $lins[$_] =~ s/\)/X0029/g; $repl = 1; }
+        if ($lin =~ m/\bU [\dA-F]{4}/) {
+          $lins[$_] =~ s/\bU ([\dA-F]{4})/U$1/g; $repl = 1;
+        }
       }
     }
     if ($lin =~ m/^\(CHARSINTYPE /) { $mod = 1; }
