@@ -12,8 +12,8 @@
 package ZRTeXtor;
 use strict qw( refs vars subs );
 require Exporter;
-our $VERSION = 1.005_00;
-our $mod_date = "2018/01/21";
+our $VERSION = 1.006_00;
+our $mod_date = "2019/02/25";
 our @ISA = qw( Exporter );
 our @EXPORT = ();
 our %EXPORT_TAGS = (
@@ -2846,8 +2846,11 @@ sub vf_analyze_dimap
   # coderange consistency
   @fs = sort { $a <=> $b } (keys %$typ);
   foreach $cc (@fs) {
-    (defined $chdsc->{$cc}) or return error(
-      sprintf("charpacket missing in VF: code %04X", $cc));
+    (defined $chdsc->{$cc}) and next;
+    if ($vf_strict) {
+      return error(sprintf("charpacket missing in VF: code %04X", $cc));
+    }
+    delete $typ->{$cc};
   }
   #
   @ccs = sort { $a <=> $b } (keys %$chdsc);
