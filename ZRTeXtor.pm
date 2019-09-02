@@ -12,8 +12,8 @@
 package ZRTeXtor;
 use strict qw( refs vars subs );
 require Exporter;
-our $VERSION = 1.006_00;
-our $mod_date = "2019/02/25";
+our $VERSION = 1.007_00;
+our $mod_date = "2019/09/02";
 our @ISA = qw( Exporter );
 our @EXPORT = ();
 our %EXPORT_TAGS = (
