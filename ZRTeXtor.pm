@@ -1,7 +1,7 @@
 #
 # ZRTeXtor.pm : library for processing TeX font data
 #
-# Copyright (c) 2018 Takayuki YATO (aka. "ZR")
+# Copyright (c) 2010-2021 Takayuki YATO (aka. "ZR")
 #   GitHub:   https://github.com/zr-tex8r
 #   Twitter:  @zr_tex8r
 #
@@ -12,8 +12,8 @@
 package ZRTeXtor;
 use strict qw( refs vars subs );
 require Exporter;
-our $VERSION = 1.007_00;
-our $mod_date = "2019/09/02";
+our $VERSION = 1.008_00;
+our $mod_date = "2021/05/29";
 our @ISA = qw( Exporter );
 our @EXPORT = ();
 our %EXPORT_TAGS = (
@@ -1977,7 +1977,7 @@ sub vf_parse
       pl_set_value($pe->[7], 1, $fs[4]);
       pl_set_value($pe, 1, unpack_num($fs[1]));
       if ($fs[5] eq '') { splice(@$pe, 3, 1); }
-      $stg = 1; push(@$pl, $pe);
+      $stg = 2; push(@$pl, $pe);
     } elsif ($stg == 2 && $t == 248) { # post
       (($u = substr($dat, $pos, $t)) =~ /^\xf8+$/)
         or return vf_synerror("in postamble");
