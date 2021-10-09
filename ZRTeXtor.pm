@@ -12,8 +12,8 @@
 package ZRTeXtor;
 use strict qw( refs vars subs );
 require Exporter;
-our $VERSION = 1.008_00;
-our $mod_date = "2021/05/29";
+our $VERSION = 1.008_01;
+our $mod_date = "2021/10/09";
 our @ISA = qw( Exporter );
 our @EXPORT = ();
 our %EXPORT_TAGS = (
@@ -1977,13 +1977,15 @@ sub vf_parse
       pl_set_value($pe->[7], 1, $fs[4]);
       pl_set_value($pe, 1, unpack_num($fs[1]));
       if ($fs[5] eq '') { splice(@$pe, 3, 1); }
-      $stg = 2; push(@$pl, $pe);
-    } elsif ($stg == 2 && $t == 248) { # post
+      $stg = 1; push(@$pl, $pe);
+    } elsif ($stg <= 2 && $t == 248) { # post
       (($u = substr($dat, $pos, $t)) =~ /^\xf8+$/)
         or return vf_synerror("in postamble");
+      $stg = 3;
       last;
     } else { return vf_synerror("unexpected byte $t"); }
   }
+  ($swdh || $stg == 3) or return vf_synerror("premature end");
   return $pl;
 }
 
